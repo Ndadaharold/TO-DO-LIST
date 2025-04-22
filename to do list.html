@@ -1,0 +1,196 @@
+
+To do list 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>To-Do List Interactive</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2a5298;
+      margin-bottom: 20px;
+    }
+
+    .input-section {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+    }
+
+    button {
+      background: #2a5298;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li {
+      background: #f1f1f1;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: grab;
+    }
+
+    li.dragging {
+      opacity: 0.5;
+    }
+
+    li.done {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions button {
+      background: #ccc;
+      color: #333;
+      font-size: 14px;
+      padding: 5px 8px;
+    }
+
+    .actions button:hover {
+      background: #bbb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ma To-Do List</h1>
+    <div class="input-section">
+      <input type="text" id="taskInput" placeholder="Nouvelle tâche..." />
+      <button onclick="addTask()">Ajouter</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    const taskList = document.getElementById("taskList");
+    const input = document.getElementById("taskInput");
+
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        li.setAttribute("draggable", "true");
+        li.dataset.index = index;
+
+        if (task.done) li.classList.add("done");
+
+        li.innerHTML = `
+          <span onclick="toggleDone(${index})">${task.text}</span>
+          <div class="actions">
+            <button onclick="deleteTask(${index})">Supprimer</button>
+          </div>
+        `;
+
+        li.addEventListener("dragstart", dragStart);
+        li.addEventListener("dragover", dragOver);
+        li.addEventListener("drop", drop);
+        li.addEventListener("dragend", dragEnd);
+
+        taskList.appendChild(li);
+      });
+    }
+
+    function addTask() {
+      const text = input.value.trim();
+      if (text === "") return;
+      tasks.push({ text, done: false });
+      input.value = "";
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    }
+
+    function toggleDone(index) {
+      tasks[index].done = !tasks[index].done;
+      saveTasks();
+      renderTasks();
+    }
+
+    let draggedItem = null;
+
+    function dragStart(e) {
+      draggedItem = this;
+      setTimeout(() => this.classList.add("dragging"), 0);
+    }
+
+    function dragOver(e) {
+      e.preventDefault();
+      const target = e.target.closest("li");
+      if (target && target !== draggedItem) {
+        const from = +draggedItem.dataset.index;
+        const to = +target.dataset.index;
+        const movedItem = tasks.splice(from, 1)[0];
+        tasks.splice(to, 0, movedItem);
+        renderTasks();
+      }
+    }
+
+    function drop() {
+      this.classList.remove("dragging");
+      saveTasks();
+    }
+
+    function dragEnd() {
+      this.classList.remove("dragging");
+    }
+
+    renderTasks();
+  </script>
+</body>
+</html>
